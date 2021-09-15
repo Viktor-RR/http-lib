@@ -5,11 +5,11 @@ import com.viktor.framework.exception.*;
 import com.viktor.framework.guava.Bytes;
 import com.viktor.framework.parsers.BodyParser;
 import com.viktor.framework.parsers.MultiBodyParser;
-import com.viktor.framework.parsers.Part;
 import com.viktor.framework.parsers.QueryParser;
 import com.viktor.framework.resolver.argument.HandlerMethodArgumentResolver;
 import io.github.classgraph.ClassGraph;
 import lombok.extern.java.Log;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -153,14 +153,14 @@ public class Server {
   }
   // Сервер остановится - Socket exception
   // Если не в New Thread, сервер остановится - IndexOutOfBoundException
-//  public void stop() {
-//    var serverSocket = (ServerSocket) serverSocketList.remove(0);
-//    try {
-//      serverSocket.close();
-//    } catch (IOException e) {
-//      e.printStackTrace();
-//    }
-//  }
+  public void stop() {
+    var serverSocket = (ServerSocket) serverSocketList.remove(0);
+    try {
+      serverSocket.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
   //****************************************************************************************
 
 
