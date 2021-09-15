@@ -14,7 +14,6 @@ class QueryParserTest {
 
     @Test
     void DoQueryParserWorksWithFormEncoded() {
-        Map<String, List<String>> query = new HashMap<>();
         Map<String,String> headers = new HashMap<>();
 
         headers.put("Content-Type", "application/x-www-form-urlencoded");
@@ -22,7 +21,7 @@ class QueryParserTest {
 
         QueryParser queryParser = new QueryParser();
         Request request = Request.builder().method("POST").path("http://localhost:9999/coursar/search?q=JavaPRO").headers(headers).body(body).build();
-        queryParser.queryParsing(request, query);
+        Map<String, List<String>> query = queryParser.queryParsing(request);
 
         Map<String, List<String>> query2= new HashMap<>();
         query2.put("q", List.of("JavaPRO"));

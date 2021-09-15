@@ -5,57 +5,72 @@ import com.viktor.framework.guava.Bytes;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class MultiBodyParser {
 
-    public void MultiParsing(Request request, Map<String, Part> originalMap) {
-        final String REGEX = "\"(.+?)\"";
+    public Map<String, Part> multiParsing(Request request) {
+        Map<String, Part> originalMap = new HashMap<>();
+        final String REGEX = "\"(.+?)\"";;
         final byte[] CRLF = new byte[]{'\r', '\n'};
         final byte[] CRLFCRLF = new byte[]{'\r', '\n', '\r', '\n'};
 
-        String contentType = request.getHeaders().getOrDefault("Content-Type", "");
-        if (!contentType.startsWith("multipart/form-data"))
-            return;
+        var contentType = request.getHeaders().getOrDefault("Content-Type", "");
+        if (!contentType.contains("boundary")) {
+            return null;
+        }
 
-        Map<String, String> headers = request.getHeaders();
-        String boundaryNotFinal = headers.getOrDefault("Content-Type", "");
-        String boundaryFinal = "--" + boundaryNotFinal.substring(boundaryNotFinal.indexOf("=") + 1);
+        var headers = request.getHeaders();
+        var boundaryNotFinal = headers.getOrDefault("Content-Type", "");
+        var boundaryFinal = "--" + boundaryNotFinal.substring(boundaryNotFinal.indexOf("=") + 1);
 
-        String fullBodyString = new String(request.getBody());
-        List<String> partsOfBodyByBoundary = Arrays.stream(fullBodyString.split(boundaryFinal))
+        var fullBodyString = new String(request.getBody());
+        var partsOfBodyByBoundary = Arrays.stream(fullBodyString.split(boundaryFinal))
                 .map(String::trim)
-                .filter(s -> s.startsWith("Content-Disposition"))
+                .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
+        var flag = partsOfBodyByBoundary.remove(partsOfBodyByBoundary.size() - 1);
+        var lastIndexWithFlag = partsOfBodyByBoundary.remove(partsOfBodyByBoundary.size() - 1).concat(flag);
+        partsOfBodyByBoundary.add(lastIndexWithFlag);
+
         for (String stringWithFile : partsOfBodyByBoundary) {
-            if (stringWithFile.contains("Content-Transfer-Encoding: binary")) {
-                int index = Bytes.indexOf(stringWithFile.getBytes(StandardCharsets.UTF_8), CRLFCRLF, 0, stringWithFile.length()) + CRLF.length;
-                String tempParam = new String(stringWithFile.getBytes(StandardCharsets.UTF_8), 0, index).trim();
-                String file = new String(stringWithFile.getBytes(StandardCharsets.UTF_8), index, stringWithFile.length()).trim();
-                String finalParam = "";
-                Matcher matcher = Pattern.compile(REGEX).matcher(tempParam);
-                while (matcher.find()) {
-                    finalParam = matcher.group();
+            if (stringWithFile.endsWith(flag)) {
+                var finalStringWithFile = stringWithFile.substring(0, stringWithFile.length() - flag.length()).trim();
+                int index = Bytes.indexOf(finalStringWithFile.getBytes(StandardCharsets.UTF_8), CRLFCRLF, 0, finalStringWithFile.length()) + CRLF.length;
+                var tempParams = new String(finalStringWithFile.getBytes(StandardCharsets.UTF_8), 0, index).trim();
+                var file = finalStringWithFile.replace(tempParams,"").trim();
+                var keyName = "";
+                var filename = "";
+                var matcher = Pattern.compile(REGEX).matcher(tempParams);
+                while (matcher.find(0)) {
+                    keyName = matcher.group();
+                    break;
                 }
-                originalMap.put(finalParam, new Part("",file));
+                while (matcher.find()) {
+                    filename = matcher.group();
+                }
+                var finalKey = keyName.replaceAll("\"", "");
+                var finalFilename= filename.replaceAll("\"", "");
+                originalMap.put(finalKey, new Part(finalFilename, file.getBytes(StandardCharsets.UTF_8)));
 
             } else {
-                int lastIndex = Bytes.indexOf(stringWithFile.getBytes(StandardCharsets.UTF_8),CRLFCRLF,0,stringWithFile.length()) + CRLFCRLF.length;
-                String tempParam = new String(stringWithFile.getBytes(StandardCharsets.UTF_8),0,lastIndex);
-                String value = stringWithFile.replace(tempParam,"").trim();
+                var lastIndex = Bytes.indexOf(stringWithFile.getBytes(StandardCharsets.UTF_8), CRLFCRLF,0,stringWithFile.length()) + CRLFCRLF.length;
+                var tempParams = new String(stringWithFile.getBytes(StandardCharsets.UTF_8),0,lastIndex);
+                var value = stringWithFile.replace(tempParams,"").trim();
                 String finalParam = "";
-                Matcher matcher = Pattern.compile(REGEX).matcher(tempParam);
+                var matcher = Pattern.compile(REGEX).matcher(tempParams);
                 while (matcher.find()) {
                     finalParam = matcher.group();
                 }
-                originalMap.put(finalParam, new Part(value,""));
+                var lastParam = finalParam.replaceAll("\"", "");
+                originalMap.put(lastParam, new Part(value));
 
             }
-        }
+        }   return originalMap;
     }
+
 }
 

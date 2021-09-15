@@ -1,23 +1,49 @@
 package com.viktor.framework.parsers;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Part {
-    private List<String> values = new ArrayList<>();
-    private  List<String> files = new ArrayList<>();
+    private  String value;
+    private  String fileName;
+    private  byte[] data;
 
-    public Part(String values, String files) {
-        this.values.add(values);
-        this.files.add(files);
+
+
+
+    public Part(String value, String fileName, byte[] data) {
+        this.value = value;
+        this.fileName = fileName;
+        this.data = data;
     }
 
-
-    public List<String> getValues() {
-        return values;
+    public Part(String fileName, byte[] data) {
+        this.fileName = fileName;
+        this.data = data;
     }
 
-    public List<String> getFiles() {
-        return files;
+    public Part(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
     }
 }

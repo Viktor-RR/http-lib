@@ -10,7 +10,6 @@ import com.viktor.framework.parsers.QueryParser;
 import com.viktor.framework.resolver.argument.HandlerMethodArgumentResolver;
 import io.github.classgraph.ClassGraph;
 import lombok.extern.java.Log;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -22,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -30,14 +28,9 @@ import java.util.stream.Collectors;
 public class Server {
   private static final byte[] CRLF = new byte[]{'\r', '\n'};
   private static final byte[] CRLFCRLF = new byte[]{'\r', '\n', '\r', '\n'};
+  private List<Object> serverSocketList = new ArrayList<>();
   private final static int headersLimit = 4096;
   private final static long bodyLimit = 10 * 1024 * 1024;
-  private final Map<String, Part> multipart = new HashMap<>();
-  //****************************************************************************************
-  private final Map<String, List<String>> query = new HashMap<>();
-  private final Map<String, List<String>> form = new HashMap<>();
-
-  //****************************************************************************************
   private final ExecutorService service = Executors.newFixedThreadPool(64, r -> {
     final var thread = new Thread(r);
     thread.setDaemon(true);
@@ -71,15 +64,15 @@ public class Server {
     final var body = "{\"status\": \"error\"}";
     try {
       response.write(
-          (
-              // language=HTTP
-              "HTTP/1.1 500 Internal Server Error\r\n" +
-                  "Content-Length: " + body.length() + "\r\n" +
-                  "Content-Type: application/json\r\n" +
-                  "Connection: close\r\n" +
-                  "\r\n" +
-                  body
-          ).getBytes(StandardCharsets.UTF_8)
+              (
+                      // language=HTTP
+                      "HTTP/1.1 500 Internal Server Error\r\n" +
+                              "Content-Length: " + body.length() + "\r\n" +
+                              "Content-Type: application/json\r\n" +
+                              "Connection: close\r\n" +
+                              "\r\n" +
+                              body
+              ).getBytes(StandardCharsets.UTF_8)
       );
     } catch (IOException e) {
       throw new RequestHandleException(e);
@@ -88,7 +81,7 @@ public class Server {
   private final List<HandlerMethodArgumentResolver> argumentResolvers = new ArrayList<>();
 
   //****************************************************************************************
-  private final AtomicBoolean stopped = new AtomicBoolean(false);
+  private volatile boolean stopped = false;
   //****************************************************************************************
   public void get(String path, Handler handler) {
     registerHandler(HttpMethods.GET, path, handler);
@@ -148,8 +141,9 @@ public class Server {
     try (
         final var serverSocket = new ServerSocket(port)
     ) {
+      serverSocketList.add(serverSocket);
       log.log(Level.INFO, "server started at port: " + serverSocket.getLocalPort());
-      while (!stopped.get()) {
+      while (!stopped) {
         final var socket = serverSocket.accept();
         service.submit(() -> handle(socket));
       }
@@ -157,11 +151,16 @@ public class Server {
       throw new ServerException(e);
     }
   }
-  //****************************************************************************************
-  public void stop() {
-      stopped.set(true);
-      service.shutdown();
-    }
+  // Сервер остановится - Socket exception
+  // Если не в New Thread, сервер остановится - IndexOutOfBoundException
+//  public void stop() {
+//    var serverSocket = (ServerSocket) serverSocketList.remove(0);
+//    try {
+//      serverSocket.close();
+//    } catch (IOException e) {
+//      e.printStackTrace();
+//    }
+//  }
   //****************************************************************************************
 
 
@@ -238,12 +237,12 @@ public class Server {
                   .headers(headers)
                   .body(body)
                   .build();
-        QueryParser queryParser = new QueryParser();
-        BodyParser bodyParser = new BodyParser();
-        queryParser.queryParsing(request,query);
-        bodyParser.bodyParsing(request,form);
-        MultiBodyParser multiBodyParser = new MultiBodyParser();
-        multiBodyParser.MultiParsing(request, multipart);
+        var queryParser = new QueryParser();
+        var bodyParser = new BodyParser();
+        var multiBodyParser = new MultiBodyParser();
+        Map<String, List<String>> queryParsing = queryParser.queryParsing(request);
+        Map<String, List<String>> stringListMap = bodyParser.bodyParsing(request);
+        Map<String, Part> stringPartMap = multiBodyParser.multiParsing(request);
 
 
         final var response = out;
@@ -264,43 +263,43 @@ public class Server {
                   continue;
                 }
 
-                final var argument = argumentResolver.resolveArgument(parameter, request, response);
-                arguments.add(argument);
-                resolved = true;
-                break;
-              }
-              if (!resolved) {
-                throw new UnsupportedParameterException(parameter.getType().getName());
-              }
+              final var argument = argumentResolver.resolveArgument(parameter, request, response);
+              arguments.add(argument);
+              resolved = true;
+              break;
             }
-
-            invokableMethod.invoke(invokableHandler, arguments.toArray());
-          } catch (Exception e) {
-            internalErrorHandler.handle(request, response);
+            if (!resolved) {
+              throw new UnsupportedParameterException(parameter.getType().getName());
+            }
           }
-        } catch(MalformedRequestException e){
-          // language=HTML
-          final var html = "<h1>Mailformed request</h1>";
-          out.write(
-                  (
-                          // language=HTTP
-                          "HTTP/1.1 400 Bad Request\r\n" +
-                                  "Server: nginx\r\n" +
-                                  "Content-Length: " + html.length() + "\r\n" +
-                                  "Content-Type: text/html; charset=UTF-8\r\n" +
-                                  "Connection: close\r\n" +
-                                  "\r\n" +
-                                  html
-                  ).getBytes(StandardCharsets.UTF_8)
-          );
-        } catch(NoSuchMethodException e){
-          e.printStackTrace();
-          // TODO:
+
+          invokableMethod.invoke(invokableHandler, arguments.toArray());
+        } catch (Exception e) {
+          internalErrorHandler.handle(request, response);
         }
-    } catch (IOException e) {
+      } catch(MalformedRequestException e){
+        // language=HTML
+        final var html = "<h1>Mailformed request</h1>";
+        out.write(
+                (
+                        // language=HTTP
+                        "HTTP/1.1 400 Bad Request\r\n" +
+                                "Server: nginx\r\n" +
+                                "Content-Length: " + html.length() + "\r\n" +
+                                "Content-Type: text/html; charset=UTF-8\r\n" +
+                                "Connection: close\r\n" +
+                                "\r\n" +
+                                html
+                ).getBytes(StandardCharsets.UTF_8)
+        );
+      } catch(NoSuchMethodException e){
         e.printStackTrace();
         // TODO:
       }
+    } catch (IOException e) {
+      e.printStackTrace();
+      // TODO:
     }
+  }
 
 }

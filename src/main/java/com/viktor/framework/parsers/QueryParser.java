@@ -14,15 +14,11 @@ import java.util.regex.Pattern;
 import static java.util.stream.Collectors.*;
 
 public class QueryParser {
-    public void queryParsing (Request request, Map<String,List<String>> originalMap) {
-        String contentType = request.getHeaders().getOrDefault("Content-Type", "");
-        if (!contentType.equals("application/x-www-form-urlencoded"))
-            return;
-        Map<String, List<String>> collection = Pattern.compile("&")
-                .splitAsStream(request.getPath().substring(request.getPath().indexOf("?") + 1))
-                .map(s -> Arrays.copyOf(s.split("=", 2), 2))
-                .collect(groupingBy(s -> decode(s[0]), mapping(s -> decode(s[1]), toList())));
-        originalMap.putAll(collection);
+    public Map<String,List<String>> queryParsing (Request request) {
+        return Pattern.compile("&")
+                 .splitAsStream(request.getPath().substring(request.getPath().indexOf("?") + 1))
+                 .map(s -> Arrays.copyOf(s.split("=", 2), 2))
+                 .collect(groupingBy(s -> decode(s[0]), mapping(s -> decode(s[1]), toList())));
 
     }
     private String decode(String encoded) {

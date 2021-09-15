@@ -15,16 +15,16 @@ import java.util.regex.Pattern;
 import static java.util.stream.Collectors.*;
 
 public class BodyParser {
-    public void bodyParsing (Request request, Map<String, List<String>> originalBodyMap) {
+    public Map<String, List<String>> bodyParsing (Request request) {
         String contentType = request.getHeaders().getOrDefault("Content-Type", "");
-        if (!contentType.equals("application/x-www-form-urlencoded"))
-            return;
-            Map<String, List<String>> bodyCopyMap = Pattern.compile("&")
+            if (!contentType.equals("application/x-www-form-urlencoded")) {
+            return null;
+            }
+            return Pattern.compile("&")
                     .splitAsStream(new String(request.getBody()))
                     .map(s -> Arrays.copyOf(s.split("=", 2), 2))
                     .collect(groupingBy(s -> decode(s[0]), mapping(s -> decode(s[1]), toList())));
-            originalBodyMap.putAll(bodyCopyMap);
-        }
+            }
 
     private String decode(String encoded) {
         return Optional.ofNullable(encoded)

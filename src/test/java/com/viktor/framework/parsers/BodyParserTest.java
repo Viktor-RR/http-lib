@@ -14,7 +14,7 @@ class BodyParserTest {
 
     @Test
     void DoBodyParserWorksWithFormUrlencoded() {
-        Map<String, List<String>> form = new HashMap<>();
+
         Map<String,String> headers = new HashMap<>();
 
         headers.put("Content-Type", "application/x-www-form-urlencoded");
@@ -22,7 +22,7 @@ class BodyParserTest {
 
         BodyParser bodyParser = new BodyParser();
         Request request = Request.builder().method("POST").path("http://localhost:9999/coursar/search?q=JavaPRO").headers(headers).body(body).build();
-        bodyParser.bodyParsing(request, form);
+        Map<String, List<String>> form  = bodyParser.bodyParsing(request);
 
         Map<String, List<String>> form2 = new HashMap<>();
         form2.put("q",List.of("JavaAdvanced"));
