@@ -6,7 +6,10 @@ public class Part {
     private  byte[] data;
 
 
-
+    public Part(String value, String fileName) {
+        this.value = value;
+        this.fileName = fileName;
+    }
 
     public Part(String value, String fileName, byte[] data) {
         this.value = value;
