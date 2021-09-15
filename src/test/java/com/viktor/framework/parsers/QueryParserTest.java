@@ -21,7 +21,7 @@ class QueryParserTest {
 
         QueryParser queryParser = new QueryParser();
         Request request = Request.builder().method("POST").path("http://localhost:9999/coursar/search?q=JavaPRO").headers(headers).body(body).build();
-        Map<String, List<String>> query = queryParser.queryParsing(request);
+        Map<String, List<String>> query = queryParser.queryParser(request);
 
         Map<String, List<String>> query2= new HashMap<>();
         query2.put("q", List.of("JavaPRO"));
