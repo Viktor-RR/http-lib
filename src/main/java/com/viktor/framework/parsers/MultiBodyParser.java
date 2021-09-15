@@ -37,6 +37,7 @@ public class MultiBodyParser {
         partsOfBodyByBoundary.add(lastIndexWithFlag);
 
         for (String stringWithFile : partsOfBodyByBoundary) {
+            //flag boundary--
             if (stringWithFile.endsWith(flag)) {
                 var finalStringWithFile = stringWithFile.substring(0, stringWithFile.length() - flag.length()).trim();
                 int index = Bytes.indexOf(finalStringWithFile.getBytes(StandardCharsets.UTF_8), CRLFCRLF, 0, finalStringWithFile.length()) + CRLF.length;
