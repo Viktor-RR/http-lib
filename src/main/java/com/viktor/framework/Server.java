@@ -242,7 +242,7 @@ public class Server {
         var multiBodyParser = new MultiBodyParser();
         var query = queryParser.queryParsing(request);
         var form = bodyParser.bodyParsing(request);
-        var multiForm = multiBodyParser.multiParsing(request);
+        var multiForm = multiBodyParser.multiParser(request);
 
 
         final var response = out;

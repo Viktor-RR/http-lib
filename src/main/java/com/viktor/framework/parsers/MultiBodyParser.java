@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 public class MultiBodyParser {
 
-    public Map<String, Part> multiParsing(Request request) {
+    public Map<String, Part> multiParser(Request request) {
         Map<String, Part> originalMap = new HashMap<>();
         final String REGEX = "\"(.+?)\"";;
         final byte[] CRLF = new byte[]{'\r', '\n'};
