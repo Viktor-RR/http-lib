@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import static java.util.stream.Collectors.*;
 
 public class QueryParser {
-    public Map<String,List<String>> queryParsing (Request request) {
+    public Map<String,List<String>> queryParser (Request request) {
         return Pattern.compile("&")
                  .splitAsStream(request.getPath().substring(request.getPath().indexOf("?") + 1))
                  .map(s -> Arrays.copyOf(s.split("=", 2), 2))
