@@ -23,7 +23,7 @@ class BodyParserTest {
         BodyParser bodyParser = new BodyParser();
         Request request = Request.builder().method("POST").path("http://localhost:9999/coursar/search?q=JavaPRO").headers(headers).body(body).build();
         Map<String, List<String>> form  = bodyParser.bodyParsing(request);
-
+        //fixed
         Map<String, List<String>> form2 = new HashMap<>();
         form2.put("q",List.of("JavaAdvanced"));
         form2.put("v",List.of("16"));
