@@ -3,6 +3,7 @@ package com.viktor.framework.parsers;
 public class Part {
     private  String value;
     private  String fileName;
+    // file
     private  byte[] data;
 
 
