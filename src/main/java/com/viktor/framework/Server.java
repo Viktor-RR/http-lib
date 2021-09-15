@@ -240,9 +240,9 @@ public class Server {
         var queryParser = new QueryParser();
         var bodyParser = new BodyParser();
         var multiBodyParser = new MultiBodyParser();
-        Map<String, List<String>> queryParsing = queryParser.queryParsing(request);
-        Map<String, List<String>> stringListMap = bodyParser.bodyParsing(request);
-        Map<String, Part> stringPartMap = multiBodyParser.multiParsing(request);
+        var query = queryParser.queryParsing(request);
+        var form = bodyParser.bodyParsing(request);
+        var multiForm = multiBodyParser.multiParsing(request);
 
 
         final var response = out;
