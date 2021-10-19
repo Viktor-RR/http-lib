@@ -6,7 +6,7 @@
 
     <groupId>com.viktor.framework</groupId>
     <artifactId>http-server</artifactId>
-    <version>3.0</version>
+    <version>4.0</version>
 
     <properties>
         <maven.compiler.source>16</maven.compiler.source>
